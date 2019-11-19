@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.779
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ColonyDetector", "ColonyDetector\ColonyDetector.vcxproj", "{CFED7C07-0AE0-47A7-9856-1499282B1C23}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CFED7C07-0AE0-47A7-9856-1499282B1C23}.Debug|x64.ActiveCfg = Debug|x64
+		{CFED7C07-0AE0-47A7-9856-1499282B1C23}.Debug|x64.Build.0 = Debug|x64
+		{CFED7C07-0AE0-47A7-9856-1499282B1C23}.Debug|x86.ActiveCfg = Debug|Win32
+		{CFED7C07-0AE0-47A7-9856-1499282B1C23}.Debug|x86.Build.0 = Debug|Win32
+		{CFED7C07-0AE0-47A7-9856-1499282B1C23}.Release|x64.ActiveCfg = Release|x64
+		{CFED7C07-0AE0-47A7-9856-1499282B1C23}.Release|x64.Build.0 = Release|x64
+		{CFED7C07-0AE0-47A7-9856-1499282B1C23}.Release|x86.ActiveCfg = Release|Win32
+		{CFED7C07-0AE0-47A7-9856-1499282B1C23}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CB78DBE1-25E0-4133-AD41-E07108E53A96}
+	EndGlobalSection
+EndGlobal
