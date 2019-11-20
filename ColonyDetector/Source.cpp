@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstring>
 #include <vector>
+#include <iomanip>
 
 using namespace cv;
 using namespace std;
@@ -18,45 +19,49 @@ void show(Mat src, string name) {
 
 Mat ApplyThreshold(Mat src) {
 	Mat dst;
-	threshold(src, dst, 120, 255, THRESH_BINARY);
+	threshold(src, dst, 100, 255, THRESH_BINARY);
 	return dst;
 }
 
-Mat resizeImage(Mat src, float per) {
+Mat resizeImage(Mat src, double per) {
 	Mat temp_dst;
 	resize(src, temp_dst, cv::Size(), per, per);
 	return temp_dst;
 }
 
-Mat prepareImage(Mat src, bool filter, int filVal, int thresh, float globalRes) {
+Mat prepareImage(Mat src, bool filter, int minVal, int maxVal, int thresh) {
 	Mat temp = src.clone();
 	Mat originalResized;
 
 	/*Resize Image*/
-	temp = resizeImage(temp, globalRes);
 	originalResized = temp;
 
 	/*Convert to Grayscale*/
 	cvtColor(temp, temp, COLOR_BGR2GRAY);
+	cout  << "[10%] Converted to Grayscale." << endl;
 
 	/*Apply Threshold*/
 	temp = ApplyThreshold(temp);
+	cout << "[25%] Applied Threshold" << endl;
 
 	/*Apply Canny*/
 	Canny(temp, temp, thresh, thresh *2);
+	cout << "[40%] Applied Canny" << endl;
 
 	/*Find Contours*/
 	vector<vector<Point>> contours;
 	vector<Vec4i> hierarchy;
 	findContours(temp, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0));
+	cout << "[60%] Found Contours" << endl;
 
 	/*Filtering Contours by Area*/
+
 	vector<vector<Point>> filtered_contours;
 	vector<Vec4i> filtered_hierarchy;
 	for (int i = 0; i < contours.size(); i++) {
 		float area = contourArea(contours[i]);
 		if (filter) {
-			if (area > filVal) {
+			if (area > minVal && area < maxVal) {
 				filtered_contours.push_back(contours[i]);
 				filtered_hierarchy.push_back(hierarchy[i]);
 			}
@@ -66,7 +71,8 @@ Mat prepareImage(Mat src, bool filter, int filVal, int thresh, float globalRes) 
 			filtered_hierarchy.push_back(hierarchy[i]);
 		}
 	}
-
+	cout << "[75%] Filtered Contours" << endl;
+	
 	/*Filter by Compositions*/
 
 	//NOTA PARA GUILLE AQUI EMPIEZA PARTE QUE FALTA
@@ -108,22 +114,25 @@ Mat prepareImage(Mat src, bool filter, int filVal, int thresh, float globalRes) 
 	//HASTA AQUI TERMINA LA PARTE QUE FALTA
 
 	//Drawing Areas
-	Mat drawing = resizeImage(src, globalRes);
+	cout << "[95%] Drawing Contours..." << endl;
+	Mat drawing = src.clone();
 	for (int i = 0; i < filtered_contours.size(); i++)
 	{
 		Scalar color = Scalar(0,255,0);
 		drawContours(drawing, filtered_contours, i, color, 2, 8, filtered_hierarchy, 0, Point());
 	}
 
+	cout << "[100%] Drawed Contours" << endl;
+
 	return drawing;
 }
 
 int main() {
 	/*Read Images*/
-	Mat src0 = imread("DSC_0112.JPG");
+	Mat src0 = imread("DSC_0110.JPG");
 	//prepImage(Map src, bool filter, int minArea, int cannyThreshold, float resizeVal)
-	Mat src = prepareImage(src0, true, 10, 120, 0.40);
-	show(resizeImage(src, .70), "Colonies");
+	Mat src = prepareImage(src0, true, 10, 100, 120);
+	show(resizeImage(src, .35), "Colonies");
 	cout << "Number of Colonies found: " << col_counter << endl;
 
 	waitKey(0);
