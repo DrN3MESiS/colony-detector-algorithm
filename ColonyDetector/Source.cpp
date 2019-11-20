@@ -17,9 +17,9 @@ void show(Mat src, string name) {
 	imshow(name, src);
 }
 
-Mat ApplyThreshold(Mat src) {
+Mat ApplyThreshold(Mat src, int thresh) {
 	Mat dst;
-	threshold(src, dst, 100, 255, THRESH_BINARY);
+	threshold(src, dst, thresh, 255, THRESH_BINARY);
 	return dst;
 }
 
@@ -29,7 +29,7 @@ Mat resizeImage(Mat src, double per) {
 	return temp_dst;
 }
 
-Mat prepareImage(Mat src, bool filter, int minVal, int maxVal, int thresh) {
+Mat prepareImage(Mat src, bool filter, int minVal, int thresh) {
 	Mat temp = src.clone();
 	Mat originalResized;
 
@@ -39,29 +39,37 @@ Mat prepareImage(Mat src, bool filter, int minVal, int maxVal, int thresh) {
 	/*Convert to Grayscale*/
 	cvtColor(temp, temp, COLOR_BGR2GRAY);
 	cout  << "[10%] Converted to Grayscale." << endl;
+	show(resizeImage(temp, .35), "grayscale");
+
+	/*Apply Blurs*/
+	blur(temp, temp, Size(11, 11));
+	blur(temp, temp, Size(11, 11));
+	GaussianBlur(temp, temp, Size(11, 11), 11, 11);
+	show(resizeImage(temp, .35), "gaussian");
+	cout << "[17%] Applied Blurs" << endl;
 
 	/*Apply Threshold*/
-	temp = ApplyThreshold(temp);
+	temp = ApplyThreshold(temp, thresh);
+	erode(temp, temp, (13, 13));
 	cout << "[25%] Applied Threshold" << endl;
+	show(resizeImage(temp, .35), "threshold");
 
-	/*Apply Canny*/
-	Canny(temp, temp, thresh, thresh *2);
-	cout << "[40%] Applied Canny" << endl;
-
-	/*Find Contours*/
+	vector<Vec3f> circles;
+	
+	//Find Contours
 	vector<vector<Point>> contours;
 	vector<Vec4i> hierarchy;
 	findContours(temp, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0));
 	cout << "[60%] Found Contours" << endl;
 
-	/*Filtering Contours by Area*/
+	//Filtering Contours by Area
 
 	vector<vector<Point>> filtered_contours;
 	vector<Vec4i> filtered_hierarchy;
 	for (int i = 0; i < contours.size(); i++) {
 		float area = contourArea(contours[i]);
 		if (filter) {
-			if (area > minVal && area < maxVal) {
+			if (area > minVal) {
 				filtered_contours.push_back(contours[i]);
 				filtered_hierarchy.push_back(hierarchy[i]);
 			}
@@ -114,8 +122,10 @@ Mat prepareImage(Mat src, bool filter, int minVal, int maxVal, int thresh) {
 	//HASTA AQUI TERMINA LA PARTE QUE FALTA
 
 	//Drawing Areas
-	cout << "[95%] Drawing Contours..." << endl;
+	
+	cout << "[95%] Drawing image..." << endl;
 	Mat drawing = src.clone();
+	
 	for (int i = 0; i < filtered_contours.size(); i++)
 	{
 		Scalar color = Scalar(0,255,0);
@@ -129,9 +139,9 @@ Mat prepareImage(Mat src, bool filter, int minVal, int maxVal, int thresh) {
 
 int main() {
 	/*Read Images*/
-	Mat src0 = imread("DSC_0110.JPG");
-	//prepImage(Map src, bool filter, int minArea, int cannyThreshold, float resizeVal)
-	Mat src = prepareImage(src0, true, 10, 100, 120);
+	Mat src0 = imread("DSC_0112.JPG");
+	//prepImage(Map src, bool filter, int minArea, int threshold)
+	Mat src = prepareImage(src0, true, 17, 150);
 	show(resizeImage(src, .35), "Colonies");
 	cout << "Number of Colonies found: " << col_counter << endl;
 
