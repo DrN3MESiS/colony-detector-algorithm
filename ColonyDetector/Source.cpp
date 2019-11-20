@@ -33,26 +33,24 @@ Mat prepareImage(Mat src, bool filter, int minVal, int thresh) {
 	Mat temp = src.clone();
 	Mat originalResized;
 
-	/*Resize Image*/
+	//Resize Image
 	originalResized = temp;
 
-	/*Convert to Grayscale*/
+	//Convert to Grayscale
 	cvtColor(temp, temp, COLOR_BGR2GRAY);
 	cout  << "[10%] Converted to Grayscale." << endl;
-	show(resizeImage(temp, .35), "grayscale");
 
-	/*Apply Blurs*/
+	//Apply Blurs
 	blur(temp, temp, Size(11, 11));
 	blur(temp, temp, Size(11, 11));
 	GaussianBlur(temp, temp, Size(11, 11), 11, 11);
-	show(resizeImage(temp, .35), "gaussian");
 	cout << "[17%] Applied Blurs" << endl;
 
-	/*Apply Threshold*/
+	//Apply Threshold
 	temp = ApplyThreshold(temp, thresh);
 	erode(temp, temp, (13, 13));
 	cout << "[25%] Applied Threshold" << endl;
-	show(resizeImage(temp, .35), "threshold");
+	//show(resizeImage(temp, .35), "threshold");
 
 	vector<Vec3f> circles;
 	
@@ -63,7 +61,6 @@ Mat prepareImage(Mat src, bool filter, int minVal, int thresh) {
 	cout << "[60%] Found Contours" << endl;
 
 	//Filtering Contours by Area
-
 	vector<vector<Point>> filtered_contours;
 	vector<Vec4i> filtered_hierarchy;
 	for (int i = 0; i < contours.size(); i++) {
@@ -79,57 +76,40 @@ Mat prepareImage(Mat src, bool filter, int minVal, int thresh) {
 			filtered_hierarchy.push_back(hierarchy[i]);
 		}
 	}
+	contours = filtered_contours;
+	hierarchy = filtered_hierarchy;
 	cout << "[75%] Filtered Contours" << endl;
-	
-	/*Filter by Compositions*/
 
-	//NOTA PARA GUILLE AQUI EMPIEZA PARTE QUE FALTA
-	/*Wey, la idea principal de esta parte que vas a ver, era que de cada contorno analizado,
-	vamos a calcular el color predominante que hay dentro, y si hay mas rojo que los demas colores,
-	entonces podemos decir que es una colonia, por lo que hacemos un col_counter++ y añadimos el contorno
-	y su hierarchy en [i] a final_countours y final_hierarchy respectivamente.
+	/* INICIO ANALISIS COLOR DE CONTORNO*/
 	
-	Lo que termine haciendo, porque no supe como hacer lo de arriba, fue calcular el centroide del contorno,
-	y fijarme cual era el color predominante del pixel justo en el punto del centroide, y si era mas cercano
-	a rojo, hacia lo mismo que arriba si es que cumplia. (El codigo funciona, pero no nos da ninguna colonia correcta)*/
-
-	/*Calculate Contourn Centroid*/
-	/*
+	//Filter by Compositions	
 	vector<vector<Point>> final_contours;
 	vector<Vec4i> final_hierarchy;
-	vector<Moments> mu(filtered_contours.size());
-	vector<Point> mc(filtered_contours.size());
-	for (int i = 0; i < filtered_contours.size(); i++) {
-		mu[i] = moments(filtered_contours[i], false);
-		mc[i] = Point(mu[i].m10 / mu[i].m00, mu[i].m01 / mu[i].m00);
+	Mat hsv;
+	cvtColor(src, hsv, COLOR_RGB2HSV);
+	Mat finish;
+	hsv.copyTo(finish, temp);
+	//show(resizeImage(finish, .35), "hsv");
+
+	for (size_t i = 0; i < contours.size(); i++){
+		Rect _boundingRect = boundingRect(contours[i]);
+		Scalar mean_c = mean(hsv(_boundingRect));
 	}
+	contours = final_contours;
+	hierarchy = final_hierarchy;
 
-	cvtColor(originalResized, originalResized, COLOR_BGR2HSV);
-	for (int i = 0; i < filtered_contours.size(); i++) {
-		Point center = mc[i];
-		unsigned char * p = originalResized.ptr(center.y, center.x); //Obtain color
-		uchar r = p[2];
-		uchar g = p[1];
-		uchar b = p[0];
+	cout << "[85%] Filtered Colonies" << endl;
 
-		if (r > 0 && r < 255 && g < 50 && b < 50) {
-			col_counter++;
-			final_contours.push_back(filtered_contours[i]);
-			final_hierarchy.push_back(filtered_hierarchy[i]);
-		}
-	}*/
-
-	//HASTA AQUI TERMINA LA PARTE QUE FALTA
+	/* FIN ANALISIS COLOR*/
 
 	//Drawing Areas
-	
 	cout << "[95%] Drawing image..." << endl;
 	Mat drawing = src.clone();
 	
-	for (int i = 0; i < filtered_contours.size(); i++)
+	for (int i = 0; i < contours.size(); i++)
 	{
 		Scalar color = Scalar(0,255,0);
-		drawContours(drawing, filtered_contours, i, color, 2, 8, filtered_hierarchy, 0, Point());
+		drawContours(drawing, contours, i, color, 2, 8, hierarchy, 0, Point());
 	}
 
 	cout << "[100%] Drawed Contours" << endl;
@@ -141,7 +121,7 @@ int main() {
 	/*Read Images*/
 	Mat src0 = imread("DSC_0112.JPG");
 	//prepImage(Map src, bool filter, int minArea, int threshold)
-	Mat src = prepareImage(src0, true, 17, 150);
+	Mat src = prepareImage(src0, true, 1000, 150);
 	show(resizeImage(src, .35), "Colonies");
 	cout << "Number of Colonies found: " << col_counter << endl;
 
