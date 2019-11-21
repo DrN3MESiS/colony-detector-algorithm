@@ -29,7 +29,7 @@ Mat resizeImage(Mat src, double per) {
 	return temp_dst;
 }
 
-Mat prepareImage(Mat src, bool filter, int minVal, int thresh) {
+Mat prepareImage(Mat src, bool filter, int minVal, int maxVal, int thresh, int range) {
 	Mat temp = src.clone();
 	Mat originalResized;
 
@@ -48,7 +48,7 @@ Mat prepareImage(Mat src, bool filter, int minVal, int thresh) {
 
 	//Apply Threshold
 	temp = ApplyThreshold(temp, thresh);
-	erode(temp, temp, (13, 13));
+	erode(temp, temp, (500, 500));
 	cout << "[25%] Applied Threshold" << endl;
 	//show(resizeImage(temp, .35), "threshold");
 
@@ -66,7 +66,7 @@ Mat prepareImage(Mat src, bool filter, int minVal, int thresh) {
 	for (int i = 0; i < contours.size(); i++) {
 		float area = contourArea(contours[i]);
 		if (filter) {
-			if (area > minVal) {
+			if (area > minVal && area < maxVal) {
 				filtered_contours.push_back(contours[i]);
 				filtered_hierarchy.push_back(hierarchy[i]);
 			}
@@ -85,16 +85,32 @@ Mat prepareImage(Mat src, bool filter, int minVal, int thresh) {
 	//Filter by Compositions	
 	vector<vector<Point>> final_contours;
 	vector<Vec4i> final_hierarchy;
-	Mat hsv;
-	cvtColor(src, hsv, COLOR_RGB2HSV);
-	Mat finish;
-	hsv.copyTo(finish, temp);
-	//show(resizeImage(finish, .35), "hsv");
 
-	for (size_t i = 0; i < contours.size(); i++){
-		Rect _boundingRect = boundingRect(contours[i]);
-		Scalar mean_c = mean(hsv(_boundingRect));
+	/*Calculate Contourn Centroid*/
+	
+	vector<Moments> mu(contours.size());
+	vector<Point> mc(contours.size());
+	for (int i = 0; i < contours.size(); i++) {
+		mu[i] = moments(contours[i], false);
+		mc[i] = Point(mu[i].m10 / mu[i].m00, mu[i].m01 / mu[i].m00);
 	}
+
+	cout << "[80%] Calculated Centroids" << endl;
+
+	/*Analyze color in centroid*/
+	Mat gray;
+	cvtColor(src, gray, COLOR_RGB2GRAY);
+	for (int i = 0; i < filtered_contours.size(); i++) {
+		Point center = mc[i];
+		
+		if ((int)gray.at<uchar>(center.y, center.x) < range ){
+			cout << "Point("<< center.y << ", " << center.x << ") -> " <<(int)gray.at<uchar>(center.y, center.x) << endl;
+			col_counter++;
+			final_contours.push_back(contours[i]);
+			final_hierarchy.push_back(hierarchy[i]);
+		}
+	}
+
 	contours = final_contours;
 	hierarchy = final_hierarchy;
 
@@ -105,15 +121,16 @@ Mat prepareImage(Mat src, bool filter, int minVal, int thresh) {
 	//Drawing Areas
 	cout << "[95%] Drawing image..." << endl;
 	Mat drawing = src.clone();
-	
+	Mat temp_gray = src.clone();
+	cvtColor(src, temp_gray, COLOR_RGB2GRAY);
 	for (int i = 0; i < contours.size(); i++)
 	{
 		Scalar color = Scalar(0,255,0);
 		drawContours(drawing, contours, i, color, 2, 8, hierarchy, 0, Point());
+		drawContours(temp_gray, contours, i, color, 2, 8, hierarchy, 0, Point());
 	}
 
 	cout << "[100%] Drawed Contours" << endl;
-
 	return drawing;
 }
 
@@ -121,7 +138,7 @@ int main() {
 	/*Read Images*/
 	Mat src0 = imread("DSC_0112.JPG");
 	//prepImage(Map src, bool filter, int minArea, int threshold)
-	Mat src = prepareImage(src0, true, 1000, 150);
+	Mat src = prepareImage(src0, true, 1000, 10000, 150, 162);
 	show(resizeImage(src, .35), "Colonies");
 	cout << "Number of Colonies found: " << col_counter << endl;
 
