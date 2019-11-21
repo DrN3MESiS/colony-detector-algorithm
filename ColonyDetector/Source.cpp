@@ -58,7 +58,7 @@ Mat prepareImage(Mat src, bool filter, int minVal, int maxVal, int thresh, int r
 	vector<vector<Point>> contours;
 	vector<Vec4i> hierarchy;
 	findContours(temp, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0));
-	cout << "[60%] Found Contours" << endl;
+	cout << "[40%] Found Contours" << endl;
 
 	//Filtering Contours by Area
 	vector<vector<Point>> filtered_contours;
@@ -78,7 +78,7 @@ Mat prepareImage(Mat src, bool filter, int minVal, int maxVal, int thresh, int r
 	}
 	contours = filtered_contours;
 	hierarchy = filtered_hierarchy;
-	cout << "[75%] Filtered Contours" << endl;
+	cout << "[60%] Filtered Contours" << endl;
 
 	/* INICIO ANALISIS COLOR DE CONTORNO*/
 	
@@ -95,16 +95,17 @@ Mat prepareImage(Mat src, bool filter, int minVal, int maxVal, int thresh, int r
 		mc[i] = Point(mu[i].m10 / mu[i].m00, mu[i].m01 / mu[i].m00);
 	}
 
-	cout << "[80%] Calculated Centroids" << endl;
+	cout << "[70%] Calculated Centroids" << endl;
 
 	/*Analyze color in centroid*/
 	Mat gray;
 	cvtColor(src, gray, COLOR_RGB2GRAY);
+	cout << "[82%] Looking for Colonies:" << endl;
 	for (int i = 0; i < filtered_contours.size(); i++) {
 		Point center = mc[i];
 		
 		if ((int)gray.at<uchar>(center.y, center.x) < range ){
-			cout << "Point("<< center.y << ", " << center.x << ") -> " <<(int)gray.at<uchar>(center.y, center.x) << endl;
+			cout << "** Found Colony -> Point("<< center.y << ", " << center.x << ")"<< endl;
 			col_counter++;
 			final_contours.push_back(contours[i]);
 			final_hierarchy.push_back(hierarchy[i]);
@@ -137,7 +138,7 @@ Mat prepareImage(Mat src, bool filter, int minVal, int maxVal, int thresh, int r
 int main() {
 	/*Read Images*/
 	Mat src0 = imread("DSC_0112.JPG");
-	//prepImage(Map src, bool filter, int minArea, int threshold)
+	//prepImage(Map src, bool filter, int minArea, int threshold, int centerRange)
 	Mat src = prepareImage(src0, true, 1000, 10000, 150, 162);
 	show(resizeImage(src, .35), "Colonies");
 	cout << "Number of Colonies found: " << col_counter << endl;
